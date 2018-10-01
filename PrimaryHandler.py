@@ -4,10 +4,8 @@
 # default behavior is to move around whilst avoiding any obstacles and reacting to touch
 
 import math
-import time
-import rospy
 
-from interfaces import *
+from MIRO.interfaces import *
 
 
 class SecondaryInterface:

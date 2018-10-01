@@ -5,7 +5,7 @@
 
 import math
 
-from MIRO.interfaces import *
+from interfaces import *
 
 
 class SecondaryInterface:

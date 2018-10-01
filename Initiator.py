@@ -1,6 +1,9 @@
 import random
-from MIRO.PrimaryHandler import *
+from PrimaryHandler import *
 import multiprocessing
+import threading
+import time
+
 
 
 def run(robot):
@@ -15,26 +18,23 @@ def main():
 
     threads = []
     t1 = threading.Thread(target=run, args=(miro1,))
-    #t1 = multiprocessing.Process(target=run, args=(miro1,))
-    #t1.daemon = True
+    t1.setDaemon(True)
     threads.append(t1)
+    print('is 1 daemon?', t1.isDaemon())
     t1.start()
     t2 = threading.Thread(target=run, args=(miro2,))
-    #t2 = multiprocessing.Process(target=run, args=(miro2,))
-    #t2.daemon = True
+    t2.setDaemon(True)
     threads.append(t2)
+    print ('is t2 daemmon?', t2.isDaemon())
     t2.start()
-
-    try:
-        while 1:
-            time.sleep(.1)
-    except KeyboardInterrupt:
-        print ("Attempting to close threads")
-        #t1.terminate()
-        #t2.terminate()
+    while True:
+        if t1.is_alive() is False or t2.is_alive() is False:
+            break
 
 
 if __name__ == "__main__":
     main()
+
+
 
 # CHANGE TO PROCESSES

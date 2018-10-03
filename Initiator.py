@@ -28,7 +28,9 @@ def main():
     print ('is t2 daemmon?', t2.isDaemon())
     t2.start()
     while True:
-        if t1.is_alive() is False or t2.is_alive() is False:
+        if not t1.is_alive() or not t2.is_alive():
+            miro1.stop()
+            miro2.stop()
             break
 
 

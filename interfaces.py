@@ -6,7 +6,7 @@ from geometry_msgs.msg import Twist, Pose2D
 from sensor_msgs.msg import Temperature, Imu, JointState, Range
 from nav_msgs.msg import Odometry
 from array import array
-from miro_msgs.msg import platform_control, platform_sensors, platform_mics
+from miro_msgs.msg import platform_control, platform_sensors, platform_mics, bridge_stream, bridge_config
 import numpy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
@@ -44,6 +44,7 @@ class primary_interface:
             root = "/miro/" + str(robot_name) + "/platform"
             self.cmd_out = rospy.Publisher(root + "/control", platform_control, queue_size=1)
             self.data_in = rospy.Subscriber(root + "/sensors", platform_sensors, self.data_in, queue_size=1)
+            self.name = robot_name
 
             # List to track which flags to update after new data recieved
             self.relevant_flags = []
@@ -161,6 +162,13 @@ class primary_interface:
             time.sleep(.25)
             self.head_move()
 
+
+        def play_sound(self, sound_num):
+            sound_behavior = sound_interface(self.name)
+            sound_behavior.data_in(sound_num)
+
+        def move_to_sound(self):
+            mic_behavior = mic_interface(self.name)
 
 
         def pet_pat(self):
@@ -293,3 +301,191 @@ class camera_interface:
             self.__dict__["robot_name"] = value
         else:
             setattr(camera_interface.instances[self.robot_name], attr, value)
+
+
+# -------------------------------------------------------------------------------------#
+#
+# Plays different sounds uploaded onto P3 (SD card)
+#
+# This class is an 'extended singleton' so there can only be one instance of the class
+# for a given robot name. This prevents useless duplication if multiple other programs
+# want to access the sound stream from the same robot
+#
+# Created by James Zhu
+# 2/20/18
+#
+# Adapted by Ellie Sona
+# 10/5/18
+#
+# -------------------------------------------------------------------------------------#
+
+class sound_interface:
+    class __sound_interface:
+
+        def __init__(self, robot_name):
+            # Main publisher
+            root = "/miro/" + robot_name + "/bridge"
+            self.cmd_out = rospy.Publisher(root + "/stream", bridge_stream, queue_size=1)
+            self.primary_int = primary_interface(robot_name)
+
+        def data_in(self, sound_num):
+            start_time = rospy.get_rostime()
+
+            # output a sound with index between 1 and 3 (bark, pant, whimper)
+            while (rospy.get_rostime() - start_time).to_sec() < .3:
+                cmd = bridge_stream()
+                cmd.sound_index_P3 = sound_num
+                self.cmd_out.publish(cmd)
+
+    ##########################################################################################
+    # Stuff below here ensures that only one instance of this class is created for any robot #
+    ##########################################################################################
+
+    instances = {}
+
+    def __init__(self, name):
+
+        # Keeps track of which __camera_interface instance this object cares about
+        self.robot_name = name
+
+        # if instance already exists for robot do nothing, otherwise make a new one
+        if name in sound_interface.instances:
+            pass
+        else:
+            sound_interface.instances[name] = sound_interface.__sound_interface(name)
+
+    def __getattr__(self, attr):
+        return getattr(sound_interface.instances[self.robot_name], attr)
+
+    def __setattr__(self, attr, value):
+        if attr == "robot_name":
+            self.__dict__["robot_name"] = value
+        else:
+            setattr(sound_interface.instances[self.robot_name], attr, value)
+
+
+# -------------------------------------------------------------------------------------#
+#
+# Inputs microphone data for each ear and determines the direction of the sound source.
+#
+# This class is an 'extended singleton' so there can only be one instance of the class
+# for a given robot name. This prevents useless duplication if multiple other programs
+# want to access the sound stream from the same robot
+#
+# Created by James Zhu
+# 2/20/18
+#
+# Adapted by Ellie Sona
+# 10/5/18
+#
+# -------------------------------------------------------------------------------------#
+
+class mic_interface:
+    class __mic_interface:
+
+        def __init__(self, robot_name):
+            root = "/miro/" + robot_name + "/platform"
+            self.data_in = rospy.Subscriber(root + "/mics", platform_mics, self.data_in, queue_size=1) #changed data.in to data
+            self.primary_int = primary_interface(robot_name)
+
+        def data_in(self, data): #got rid of data field
+
+            left_mic = []
+            right_mic = []
+            even_cnt = 1
+            linear = 0
+            angular = 0
+
+            # reverse interleaving to separate left and right ear data and store in individual lists
+            for x in range(4000):
+                if even_cnt == 1:
+
+                    left_mic.append(data.data[x])
+                    even_cnt = 0
+
+                elif even_cnt == 0:
+
+                    right_mic.append(data.data[x])
+                    even_cnt = 1
+
+            max_corr = 0
+            max_index = 0
+
+            # find maximum cross correlation of mics
+            if left_mic:
+                max_mic = max(left_mic)
+                max_mic_index = left_mic.index(max_mic)
+                left_mic[max_mic_index - 50:max_mic_index + 50]
+                right_mic[max_mic_index - 50:max_mic_index + 50]
+                corr = numpy.ndarray.tolist(numpy.correlate(left_mic, right_mic, "same"))
+                max_corr = max(corr[994:1006])
+                max_index = corr.index(max_corr)
+
+            # if sound is sufficiently loud, move towards sound source
+            if max_corr > 1000000:  #changed from 40000
+
+                if max_index >= 994 and max_index <= 995:
+                    linear = .1
+                    angular = 1
+                    self.primary_int.update_body_vel(linear, angular)
+                    time.sleep(1.4)
+                elif max_index >= 996 and max_index <= 997:
+                    linear = .1
+                    angular = 1
+                    self.primary_int.update_body_vel(linear, angular)
+                    time.sleep(1)
+                elif max_index >= 998 and max_index <= 999:
+                    linear = .1
+                    angular = 1
+                    self.primary_int.update_body_vel(linear, angular)  # time.sleep(.6)
+                elif max_index == 1000:
+                    linear = .1
+                    angular = 0
+                    self.primary_int.update_body_vel(linear, angular)
+                elif max_index >= 1001 and max_index <= 1002:
+                    linear = .1
+                    angular = -1
+                    self.primary_int.update_body_vel(linear, angular)
+                    time.sleep(.6)
+                elif max_index >= 1003 and max_index <= 1004:
+                    linear = .1
+                    angular = -1
+                    self.primary_int.update_body_vel(linear, angular)
+                    time.sleep(1)
+                elif max_index >= 1005 and max_index <= 1006:
+                    linear = .1
+                    angular = -1
+                    self.primary_int.update_body_vel(linear, angular)
+                    time.sleep(1.4)
+                angular = 0
+                self.primary_int.update_body_vel(linear, angular)
+
+            if self.primary_int.sonar_range < .3 and self.primary_int.sonar_range != 0.0:
+                linear = 0
+                self.primary_int.update_body_vel(linear, angular)
+
+        ##########################################################################################
+        # Stuff below here ensures that only one instance of this class is created for any robot #
+        ##########################################################################################
+
+    instances = {}
+
+    def __init__(self, name):
+
+        # Keeps track of which __camera_interface instance this object cares about
+        self.robot_name = name
+
+        # if instance already exists for robot do nothing, otherwise make a new one
+        if name in mic_interface.instances:
+            pass
+        else:
+            mic_interface.instances[name] = mic_interface.__mic_interface(name)
+
+    def __getattr__(self, attr):
+        return getattr(mic_interface.instances[self.robot_name], attr)
+
+    def __setattr__(self, attr, value):
+        if attr == "robot_name":
+            self.__dict__["robot_name"] = value
+        else:
+            setattr(mic_interface.instances[self.robot_name], attr, value)

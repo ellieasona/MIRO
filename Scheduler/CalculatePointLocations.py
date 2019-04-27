@@ -16,8 +16,7 @@ def solve_for_x(y, slope, yintercept):
         raise Exception('Cannot solve on a horizontal line')
 
 
-def get_real_coordinates(Px, Py):
-    #fname = raw_input("calibration.txt")
+def get_real_coordinates(Px, Py, height, width):
     f = open("calibration.txt")
     fl = []
     for line in f:
@@ -34,10 +33,13 @@ def get_real_coordinates(Px, Py):
     WERy = fl[9]  # wall end right y
     OFMx = fl[10]  # one foot from bottom middle x
     OFMy = fl[11]  # one foot from bottom middle y
+
+
     UMx = (ULx + URx)/2.0  # upper middle x
     UMy = (ULy + URy)/2.0  # upper middle y
-    BMx = 960.0  # bottom middle x
-    BMy = 1080.0  # bottom middle y
+    BMx = width/2.0  # bottom middle x
+    BMy = height  # bottom middle y
+
     FFH = OFLy - ULy  # height of first foot in pixels
     LFH = BMy - OFMy  # height of the last foot in pixels
     TotH = BMy - UMy  # total height in pixels
@@ -51,15 +53,15 @@ def get_real_coordinates(Px, Py):
     LSlope, LIntercept, _, _, _ = stats.linregress([ULy, WELy], [ULx, WELx])
     RSlope, RIntercept, _, _, _ = stats.linregress([URy, WERy], [URx, WERx])
 
-    if Px < 960:
+    if Px < BMx:
         wallx = solve_for_y(Py, LSlope, LIntercept)  # wall x at given y point
-    elif Px > 960:
+    elif Px > BMx:
         wallx = solve_for_y(Py, RSlope, RIntercept)  # wall x at given y point
     else:
-        wallx = 960  # x is along middle line so "wall" is 960
+        wallx = BMx  # x is along middle line
 
-    shiftedx = Px - 960  # make center of photo 0
-    shiftedwallx = wallx - 960
+    shiftedx = Px - BMx  # make center of photo 0
+    shiftedwallx = wallx - BMx
 
     # get slope of line using ratio of x to wall x and slope to wall slope
     # shiftedx/shiftedwallx = point slope/LSlope or RSlope
@@ -75,15 +77,15 @@ def get_real_coordinates(Px, Py):
 
     # do what we just did for one foot from corner point to get
     # how many pixels one foot is on the top line
-    if OFLx < 960:
+    if OFLx < BMx:
         OFLwallx = solve_for_y(OFLy, LSlope, LIntercept)  # wall x at given y point
-    elif OFLx > 960:
+    elif OFLx > BMx:
         OFLwallx = solve_for_y(OFLy, RSlope, RIntercept)  # wall x at given y point
     else:
-        OFLwallx = 960  # x is along middle line so "wall" is 960
+        OFLwallx = BMx  # x is along middle line so "wall" is 960
 
-    OFLshiftedx = OFLx - 960  # make center of photo 0
-    OFLshiftedwallx = OFLwallx - 960
+    OFLshiftedx = OFLx - BMx  # make center of photo 0
+    OFLshiftedwallx = OFLwallx - BMx
 
     # get slope of line using ratio of x to wall x and slope to wall slope
     # shiftedx/shiftedwallx = point slope/LSlope or RSlope
@@ -102,10 +104,11 @@ def get_real_coordinates(Px, Py):
 
     Ax = (x_on_top_line - ULx) / OFPxTL # actual x in feet
 
-    Ax = Ax * .3048
+    Ax = Ax * .3048  # convert feet to meters
     Ay = Ay * .3048
+    coord = (Ax, Ay)
 
-    return Ax, Ay
+    return coord
 
 
 

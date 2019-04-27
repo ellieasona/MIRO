@@ -1,5 +1,6 @@
 import numpy
 import CalculatePointLocations as cp
+import getlocation as gl
 
 
 def calc_slope(x1, y1, x2, y2):
@@ -8,8 +9,8 @@ def calc_slope(x1, y1, x2, y2):
     return (y2 - y1) / (x2 - x1)
 
 
-def main(front, back, left, right):
-    alpha = 45
+def dir(front, back, left, right):
+    alpha = 40
     if front and left and back:
         return 180.0
     if left and back and right:
@@ -17,7 +18,7 @@ def main(front, back, left, right):
     if back and right and front:
         return 0.0
     if right and front and left:
-        return 270.0
+        return -90.0
     slope = 0
     theta = 0
     if front and left:
@@ -34,9 +35,9 @@ def main(front, back, left, right):
             theta = -90.0
 
         if lx > fx:
-            return theta + alpha
-        else:
             return 180 + theta + alpha
+        else:
+            return theta + alpha
 
     if front and right:
         rx = right[0] - front[0]
@@ -101,12 +102,43 @@ def main(front, back, left, right):
     if right:
         return 0.0
     if front:
-        return 270.0
+        return 270
+    return None
 
 
-bx, by = cp.get_real_coordinates(636.0, 675.0)
-print bx, by
-rx, ry = cp.get_real_coordinates(746.0, 645.0)
-print rx, ry
-print(main(0, [bx, by], 0, [rx, ry]))
+
+
+def get_current_info():
+    points, height, width = gl.getdotmatrix()
+    px = None
+    py = None
+    if points[0]:
+        points[0] = cp.get_real_coordinates(points[0][0], points[0][1], height, width)
+        px = points[0][0]
+        py = points[0][1]
+    if points[1]:
+        points[1] = cp.get_real_coordinates(points[1][0], points[1][1], height, width)
+        if not px:
+            px = points[1][0]
+            py = points[1][1]
+    if points[2]:
+        points[2] = cp.get_real_coordinates(points[2][0], points[2][1], height, width)
+        if not px:
+            px = points[2][0]
+            py = points[2][1]
+    if points[3]:
+        points[3] = cp.get_real_coordinates(points[3][0], points[3][1], height, width)
+        if not px:
+            px = points[3][0]
+            py = points[3][1]
+
+
+    direction = dir(points[0], points[1], points[2], points[3])
+    return px, py, direction
+
+
+
+
+
+
 

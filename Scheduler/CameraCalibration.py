@@ -30,10 +30,10 @@ msglist = [
     "Press any key to close the image "
 ]
 camera = cv2.VideoCapture(1)
-# r, image = camera.read()
-image = cv2.imread("room.jpg")
-cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('image', 768, 432)
+r, image = camera.read()
+#image = cv2.imread("miro.jpg")
+#cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+#cv2.resizeWindow('image', 768, 432)
 cv2.imshow('image', image)
 print msglist[0]
 cv2.setMouseCallback('image', click_event)

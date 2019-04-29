@@ -110,7 +110,7 @@ def getDifference(b1, b2): #literally have never called this  method just copied
     # so no need to consider negative case
     if r >= 180.0:
         r -= 360.0
-    return math.radians(r)
+    return r
 
 
 if __name__ == "__main__":

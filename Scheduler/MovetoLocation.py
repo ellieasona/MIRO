@@ -27,6 +27,21 @@ def main():
     initial_turn_angle = getDifference(cur_r, angle_between)
     final_turn_angle = getDifference(angle_between, final_r)
     print("dist: ", dist, "angle_between: ", angle_between, "initial_turn_angle: ", initial_turn_angle, "final_turn_angle: ", final_turn_angle)
+
+    if initial_turn_angle < 0:
+        initial_turn_angle = 1.0117 * initial_turn_angle - 18.909
+    if initial_turn_angle > 0:
+        initial_turn_angle = 1.0243 * initial_turn_angle + 20.431
+
+    if dist > 0:
+        dist = 1.0229 * dist + .0464
+
+    if final_turn_angle < 0:
+        final_turn_angle = 1.0117 * final_turn_angle - 18.909
+    if final_turn_angle > 0:
+        final_turn_angle = 1.0243 * final_turn_angle + 20.431
+
+
     connection = False
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -66,7 +81,7 @@ def main():
 
 
     try:
-        command = "/home/root/start_user.sh " + str(initial_turn_angle) + " " + str(dist) + " " + str(final_turn_angle)
+        command = "/home/root/start_user.sh " + str(math.radians(initial_turn_angle)) + " " + str(dist) + " " + str(math.radians(final_turn_angle))
         print("Sending move command: " + command + "\n This may take a few moments")
         stdin, stdout, stderr = ssh.exec_command(command)
     except paramiko.SSHException:

@@ -57,10 +57,10 @@ while feet <= 6:
         print("Request rejected or channel closed")
     print(stdout.readlines())
 
-    cont = raw_input("continue")
+    cont = raw_input("Press enter to continue")
 
     if cont == "quit":
-        feet = 8
+        feet = 6
     else:
         feet += .5
 

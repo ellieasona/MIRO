@@ -10,7 +10,7 @@ def calc_slope(x1, y1, x2, y2):
 
 
 def dir(front, back, left, right):
-    alpha = 40
+    alpha = 45
     if front and left and back:
         return 180.0
     if left and back and right:

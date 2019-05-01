@@ -1,4 +1,4 @@
-This repo contains the MIRO scheduler package. For more details, see the PDF operating manual.
+This repo contains the MIRO scheduler package. For more details, see the PDF operating manual located in this folder at https://github.com/ellieasona/MIRO/blob/master/MIRO%20Scheduler%20Manual.docx.
 Code to be put on the robot itself is in the "on bot" folder, and code for your workstation
 is in the "Scheduler" folder.
 
